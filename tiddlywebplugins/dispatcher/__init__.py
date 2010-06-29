@@ -5,9 +5,15 @@ necessary files.
 
 import beanstalkc
 
+from tiddlywebplugins.dispatcher.listener import (
+    DEFAULT_BEANSTALK_HOST, DEFAULT_BEANSTALK_PORT)
+
 def init(config):
-    beanstalk_host = config.get('beanstalk.host', 'localhost')
-    beanstalk_port = config.get('beanstalk.port', 11300)
+    """
+    Ensure the main server has a connection to the beanstalkd.
+    """
+    beanstalk_host = config.get('beanstalk.host', DEFAULT_BEANSTALK_HOST)
+    beanstalk_port = config.get('beanstalk.port', DEFAULT_BEANSTALK_PORT)
     config['beanstalkc'] = beanstalkc.Connection(host=beanstalk_host,
             port=beanstalk_port)
     _register_handler(config) 
@@ -15,7 +21,7 @@ def init(config):
 
 def _handler(store, tiddler):
     """
-    Inject the tiddler data into the default queue.
+    Inject the tiddler data into the default tube.
     """
     environ = store.environ
     beanstalkc = environ['tiddlyweb.config']['beanstalkc']
@@ -24,10 +30,7 @@ def _handler(store, tiddler):
     except KeyError: 
         # Called from twanager.
         username = 'GUEST'
-    # unicode concerns?
-    #data = '%s\0%s\0%s\0%s' % ( username, tiddler.bag, tiddler.title, tiddler.revision)
-    data = '%s%s%s%s' % ( username, tiddler.bag, tiddler.title, tiddler.revision)
-    print data
+    data = '%s\0%s\0%s\0%s' % ( username, tiddler.bag, tiddler.title, tiddler.revision)
     beanstalkc.put(data.encode('UTF-8'))
 
 

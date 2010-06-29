@@ -15,56 +15,74 @@ except ImportError:
 
 from tiddlyweb.manage import make_command
 
+
+DEFAULT_BEANSTALK_HOST = 'localhost'
+DEFAULT_BEANSTALK_PORT = 11300
+
 class Dispatcher(object):
 
     def __init__(self, config):
         self.config = config
 
     def run(self):
-        beanstalk_host = self.config.get('beanstalk.host', 'localhost')
-        beanstalk_port = self.config.get('beanstalk.port', 11300)
+        """
+        Run forever, listening on the 'default' tube. When a message
+        is received, send it down all the registered non-default tubes.
+        """
+        beanstalk_host = self.config.get('beanstalk.host',
+                DEFAULT_BEANSTALK_HOST)
+        beanstalk_port = self.config.get('beanstalk.port',
+                DEFAULT_BEANSTALK_PORT)
         beanstalk = beanstalkc.Connection(host=beanstalk_host,
             port=beanstalk_port)
         listeners = self.config.get('beanstalk.listeners', [__name__])
-        queues = []
+
+        tubes = []
         for listener in listeners:
             listener_module = __import__(listener, {}, {}, ['Listener'])
-            queue = listener_module.Listener.QUEUE
+            tube = listener_module.Listener.TUBE
             listener_runner = listener_module.Listener(
-                    kwargs={'queue': queue, 'config': self.config})
+                    kwargs={'tube': tube, 'config': self.config})
             listener_runner.daemon = True
             listener_runner.start()
-            queues.append(queue)
+            tubes.append(tube)
 
-        print 'I am ', os.getpid()
         while True:
             job = beanstalk.reserve()
-            for queue in queues:
-                beanstalk.use(queue)
+            for tube in tubes:
+                beanstalk.use(tube)
                 beanstalk.put(job.body)
             job.delete()
 
 
 class Listener(Process):
+    """
+    A listener process that listens on a specific beanstalk tube.
 
-    QUEUE = 'debug'
+    When a message is received as a job, self_act is called.
+    """
+
+    TUBE = 'debug'
 
     def run(self):
         print dir(self)
         config = self._kwargs['config']
-        queue = self._kwargs['queue']
-        beanstalk_host = config.get('beanstalk.host', 'localhost')
-        beanstalk_port = config.get('beanstalk.port', 11300)
+        tube = self._kwargs['tube']
+        beanstalk_host = config.get('beanstalk.host', DEFAULT_BEANSTALK_HOST)
+        beanstalk_port = config.get('beanstalk.port', DEFAULT_BEANSTALK_PORT)
         beanstalk = beanstalkc.Connection(host=beanstalk_host,
             port=beanstalk_port)
-        beanstalk.watch(queue)
+        beanstalk.watch(tube)
         beanstalk.ignore('default')
         logging.debug('using %s', beanstalk.using())
         self.beanstalk = beanstalk
         while True:
             job = self.beanstalk.reserve()
-            print '%s i got a job, debugging %s' % (os.getpid(), job.body)
+            self._act(job)
             job.delete()
+
+    def _act(self, job):
+        print '%s i got a job, debugging %s' % (os.getpid(), job.body)
 
 
 def init(config):
