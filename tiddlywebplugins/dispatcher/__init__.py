@@ -6,7 +6,7 @@ necessary files.
 import beanstalkc
 
 from tiddlywebplugins.dispatcher.listener import (
-    DEFAULT_BEANSTALK_HOST, DEFAULT_BEANSTALK_PORT)
+    DEFAULT_BEANSTALK_HOST, DEFAULT_BEANSTALK_PORT, BODY_SEPARATOR)
 
 def init(config):
     """
@@ -30,7 +30,8 @@ def _handler(store, tiddler):
     except KeyError: 
         # Called from twanager.
         username = 'GUEST'
-    data = '%s\0%s\0%s\0%s' % ( username, tiddler.bag, tiddler.title, tiddler.revision)
+    data = BODY_SEPARATOR.join([username, tiddler.bag, tiddler.title,
+        str(tiddler.revision)])
     beanstalkc.put(data.encode('UTF-8'))
 
 

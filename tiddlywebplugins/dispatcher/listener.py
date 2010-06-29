@@ -16,6 +16,8 @@ except ImportError:
 from tiddlyweb.manage import make_command
 
 
+BODY_SEPARATOR = '\0'
+BODY_PACK_FIELDS = ['user', 'bag', 'tiddler', 'revision']
 DEFAULT_BEANSTALK_HOST = 'localhost'
 DEFAULT_BEANSTALK_PORT = 11300
 
@@ -75,14 +77,18 @@ class Listener(Process):
         beanstalk.watch(tube)
         beanstalk.ignore('default')
         logging.debug('using %s', beanstalk.using())
-        self.beanstalk = beanstalk
+        self.config = config
         while True:
-            job = self.beanstalk.reserve()
+            job = beanstalk.reserve()
             self._act(job)
             job.delete()
 
     def _act(self, job):
-        print '%s i got a job, debugging %s' % (os.getpid(), job.body)
+        print '%s i got a job, debugging %s' % (os.getpid(),
+                self._unpack(job))
+
+    def _unpack(self, job):
+        return dict(zip(BODY_PACK_FIELDS, job.body.split('\0')))
 
 
 def init(config):
