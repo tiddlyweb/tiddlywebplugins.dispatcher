@@ -67,7 +67,6 @@ class Listener(Process):
     TUBE = 'debug'
 
     def run(self):
-        print dir(self)
         config = self._kwargs['config']
         tube = self._kwargs['tube']
         beanstalk_host = config.get('beanstalk.host', DEFAULT_BEANSTALK_HOST)
