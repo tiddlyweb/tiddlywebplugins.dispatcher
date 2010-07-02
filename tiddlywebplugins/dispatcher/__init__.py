@@ -32,7 +32,11 @@ def _handler(store, tiddler):
         username = 'GUEST'
     data = BODY_SEPARATOR.join([username, tiddler.bag, tiddler.title,
         str(tiddler.revision)])
-    beanstalkc.put(data.encode('UTF-8'))
+    try:
+        beanstalkc.put(data.encode('UTF-8'))
+    except beanstalkc.SocketError, exc:
+        logging.error('unable to write to beanstalkd for %s:%s: %s',
+                tiddler.bag, tiddler.title, exc)
 
 
 def _register_handler(config):

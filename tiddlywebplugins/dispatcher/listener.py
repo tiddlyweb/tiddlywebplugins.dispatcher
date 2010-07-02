@@ -87,7 +87,8 @@ class Listener(Process):
                 self._unpack(job))
 
     def _unpack(self, job):
-        return dict(zip(BODY_PACK_FIELDS, job.body.split('\0')))
+        info_items = [item.decode('UTF-8') for item in job.body.split('\0')]
+        return dict(zip(BODY_PACK_FIELDS, info_items))
 
 
 def init(config):
