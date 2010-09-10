@@ -2,7 +2,7 @@ AUTHOR = 'Chris Dent'
 AUTHOR_EMAIL = 'cdent@peermore.com'
 NAME = 'tiddlywebplugins.dispatcher'
 DESCRIPTION = 'Dispatch TiddlyWeb jobs using beanstalkd'
-VERSION = '0.3'
+VERSION = '0.4'
 
 
 import os
