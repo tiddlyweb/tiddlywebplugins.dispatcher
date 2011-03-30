@@ -9,8 +9,8 @@ etc.
 The general model goes as follows:
 
 * In init() of the plugin two things happen:
-** a tiddler_written handler is registered, that handler has one job:
-   put a message in the default queue of beanstalkd
+** a Store HOOK for tiddler put and delete is registered, that hooke has
+   one job: put a message in the default queue of beanstalkd
 ** N+1 external process are either forked or if launched by some other
    mechanism, registered. The '1' processs listens on the default
    queue and writes the tiddler ID into a queue named after each of

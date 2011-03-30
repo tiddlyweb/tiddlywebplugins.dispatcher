@@ -41,8 +41,10 @@ def _handler(store, tiddler):
 
 def _register_handler(config):
     """
-    Ensure tiddler_written is properly hooked.
+    Ensure writing a tiddler is properly hooked.
     """
-    from tiddlyweb.stores import TIDDLER_WRITTEN_HANDLERS
-    if _handler not in TIDDLER_WRITTEN_HANDLERS:
-        TIDDLER_WRITTEN_HANDLERS.append(_handler)
+    from tiddlyweb.store import HOOKS
+    if _handler not in HOOKS['tiddler']['put']:
+        HOOKS['tiddler']['put'].append(_handler)
+    if _handler not in HOOKS['tiddler']['delete']:
+        HOOKS['tiddler']['delete'].append(_handler)
