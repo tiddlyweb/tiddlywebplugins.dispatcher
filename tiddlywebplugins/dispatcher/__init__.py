@@ -24,7 +24,7 @@ def _handler(store, tiddler):
     Inject the tiddler data into the default tube.
     """
     environ = store.environ
-    beanstalkc = environ['tiddlyweb.config']['beanstalkc']
+    beanstalk = environ['tiddlyweb.config']['beanstalkc']
     try:
         username = environ['tiddlyweb.usersign']['name']
     except KeyError: 
@@ -33,7 +33,7 @@ def _handler(store, tiddler):
     data = BODY_SEPARATOR.join([username, tiddler.bag, tiddler.title,
         str(tiddler.revision)])
     try:
-        beanstalkc.put(data.encode('UTF-8'))
+        beanstalk.put(data.encode('UTF-8'))
     except beanstalkc.SocketError, exc:
         logging.error('unable to write to beanstalkd for %s:%s: %s',
                 tiddler.bag, tiddler.title, exc)
