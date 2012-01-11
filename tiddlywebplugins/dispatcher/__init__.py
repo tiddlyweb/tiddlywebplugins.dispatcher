@@ -4,6 +4,7 @@ necessary files.
 """
 
 import beanstalkc
+import logging
 
 from tiddlywebplugins.dispatcher.listener import (
     DEFAULT_BEANSTALK_HOST, DEFAULT_BEANSTALK_PORT, BODY_SEPARATOR)
