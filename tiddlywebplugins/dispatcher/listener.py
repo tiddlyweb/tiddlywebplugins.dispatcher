@@ -6,6 +6,7 @@ A listener is started via a twanager command.
 
 import beanstalkc
 import os
+import sys
 import logging
 
 try:
@@ -14,12 +15,10 @@ except ImportError:
     from processing import Process
 
 from tiddlyweb.manage import make_command
+from tiddlywebplugins.dispatcher import (DEFAULT_BEANSTALK_HOST,
+        DEFAULT_BEANSTALK_PORT, BODY_SEPARATOR, BODY_PACK_FIELDS,
+        make_beanstalkc)
 
-
-BODY_SEPARATOR = '\0'
-BODY_PACK_FIELDS = ['user', 'bag', 'tiddler', 'revision']
-DEFAULT_BEANSTALK_HOST = 'localhost'
-DEFAULT_BEANSTALK_PORT = 11300
 
 class Dispatcher(object):
 
@@ -35,8 +34,7 @@ class Dispatcher(object):
                 DEFAULT_BEANSTALK_HOST)
         beanstalk_port = self.config.get('beanstalk.port',
                 DEFAULT_BEANSTALK_PORT)
-        beanstalk = beanstalkc.Connection(host=beanstalk_host,
-            port=beanstalk_port)
+        beanstalk = make_beanstalkc(beanstalk_host, beanstalk_port)
         listeners = self.config.get('beanstalk.listeners', [__name__])
 
         tubes = []
@@ -49,12 +47,21 @@ class Dispatcher(object):
             listener_runner.start()
             tubes.append(tube)
 
-        while True:
-            job = beanstalk.reserve()
-            for tube in tubes:
-                beanstalk.use(tube)
-                beanstalk.put(job.body)
-            job.delete()
+        try:
+            while True:
+                job = beanstalk.reserve()
+                for tube in tubes:
+                    beanstalk.use(tube)
+                    beanstalk.put(job.body)
+                job.delete()
+        except beanstalkc.SocketError, exc:
+            # retry on new client
+            logging.error('dispatcher error reading beanstalk, restart: %s',
+                    exc)
+            self.run()
+        except KeyboardInterrupt:
+            logging.debug('dispatcher exiting on keyboard interrupt')
+            sys.exit(0)
 
 
 class Listener(Process):
@@ -71,16 +78,25 @@ class Listener(Process):
         tube = self._kwargs['tube']
         beanstalk_host = config.get('beanstalk.host', DEFAULT_BEANSTALK_HOST)
         beanstalk_port = config.get('beanstalk.port', DEFAULT_BEANSTALK_PORT)
-        beanstalk = beanstalkc.Connection(host=beanstalk_host,
-            port=beanstalk_port)
+        beanstalk = make_beanstalkc(beanstalk_host, beanstalk_port)
         beanstalk.watch(tube)
         beanstalk.ignore('default')
         logging.debug('using %s', beanstalk.using())
         self.config = config
-        while True:
-            job = beanstalk.reserve()
-            self._act(job)
-            job.delete()
+        try:
+            while True:
+                job = beanstalk.reserve()
+                self._act(job)
+                job.delete()
+        except beanstalkc.SocketError, exc:
+            # retry on new client
+            logging.error('listener error reading beanstalk, restart: %s',
+                    exc)
+            self.run()
+        except KeyboardInterrupt:
+            logging.debug('listener on %s tube exiting on keyboard interrupt',
+                    self.TUBE)
+            sys.exit(0)
 
     def _act(self, job):
         print '%s i got a job, debugging %s' % (os.getpid(),
