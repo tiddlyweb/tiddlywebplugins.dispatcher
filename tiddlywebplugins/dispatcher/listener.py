@@ -16,7 +16,7 @@ except ImportError:
 
 from tiddlyweb.manage import make_command
 from tiddlywebplugins.dispatcher import (DEFAULT_BEANSTALK_HOST,
-        DEFAULT_BEANSTALK_PORT, BODY_SEPARATOR, BODY_PACK_FIELDS,
+        DEFAULT_BEANSTALK_PORT, BODY_PACK_FIELDS, BODY_SEPARATOR,
         make_beanstalkc)
 
 
@@ -103,7 +103,8 @@ class Listener(Process):
                 self._unpack(job))
 
     def _unpack(self, job):
-        info_items = [item.decode('UTF-8') for item in job.body.split('\0')]
+        info_items = [item.decode('UTF-8')
+                for item in job.body.split(BODY_SEPARATOR)]
         return dict(zip(BODY_PACK_FIELDS, info_items))
 
 

@@ -19,15 +19,17 @@ def init(config):
     Ensure the main server has a connection to the beanstalkd.
     """
     make_provider_beanstalkc(config, bail=True)
-    _register_handler(config) 
+    _register_handler()
 
 
-def make_provider_beanstalkc(config={}, bail=True):
+def make_provider_beanstalkc(config=None, bail=True):
     """
     Make connection to beanstalkd for use for injecting jobs
     from core tiddlyweb. Failures should not linger, so retry
     only once.
     """
+    if config is None:
+        config = {}
     beanstalk_host = config.get('beanstalk.host', DEFAULT_BEANSTALK_HOST)
     beanstalk_port = config.get('beanstalk.port', DEFAULT_BEANSTALK_PORT)
     client = make_beanstalkc(beanstalk_host, beanstalk_port, bail)
@@ -50,7 +52,7 @@ def make_beanstalkc(host, port, bail=False, backoff=1):
         else:
             if backoff > 512:
                 raise
-            sleep(backoff/10.0) #  wait some number ms
+            sleep(backoff / 10.0)  # wait some number ms
             backoff = backoff * 2
             client = make_beanstalkc(host, port, bail=bail, backoff=backoff)
     return client
@@ -64,7 +66,7 @@ def _handler(store, tiddler):
     beanstalk = environ['tiddlyweb.config']['beanstalkc']
     try:
         username = environ['tiddlyweb.usersign']['name']
-    except KeyError: 
+    except KeyError:
         # Called from twanager.
         username = 'GUEST'
     data = BODY_SEPARATOR.join([username, tiddler.bag, tiddler.title,
@@ -81,7 +83,7 @@ def _handler(store, tiddler):
             logging.error('unable to reconnect to beanstalk: %s', exc)
 
 
-def _register_handler(config):
+def _register_handler():
     """
     Ensure writing a tiddler is properly hooked.
     """
