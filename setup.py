@@ -2,7 +2,7 @@ AUTHOR = 'Chris Dent'
 AUTHOR_EMAIL = 'cdent@peermore.com'
 NAME = 'tiddlywebplugins.dispatcher'
 DESCRIPTION = 'Dispatch TiddlyWeb jobs using beanstalkd'
-VERSION = '0.7'
+VERSION = '0.8'
 
 
 import os
@@ -23,7 +23,7 @@ setup(
     packages = find_packages(exclude=['test']),
     install_requires = [
         'setuptools',
-        'tiddlyweb',
+        'tiddlyweb>=1.4.2',
         'beanstalkc',
         ],
     zip_safe = False

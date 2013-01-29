@@ -20,6 +20,9 @@ from tiddlywebplugins.dispatcher import (DEFAULT_BEANSTALK_HOST,
         make_beanstalkc)
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 class Dispatcher(object):
 
     def __init__(self, config):
@@ -56,11 +59,11 @@ class Dispatcher(object):
                 job.delete()
         except beanstalkc.SocketError, exc:
             # retry on new client
-            logging.error('dispatcher error reading beanstalk, restart: %s',
+            LOGGER.error('dispatcher error reading beanstalk, restart: %s',
                     exc)
             self.run()
         except KeyboardInterrupt:
-            logging.debug('dispatcher exiting on keyboard interrupt')
+            LOGGER.debug('dispatcher exiting on keyboard interrupt')
             sys.exit(0)
 
 
@@ -81,7 +84,7 @@ class Listener(Process):
         beanstalk = make_beanstalkc(beanstalk_host, beanstalk_port)
         beanstalk.watch(tube)
         beanstalk.ignore('default')
-        logging.debug('using %s', beanstalk.using())
+        LOGGER.debug('using %s', beanstalk.using())
         self.config = config
         try:
             while True:
@@ -90,11 +93,11 @@ class Listener(Process):
                 job.delete()
         except beanstalkc.SocketError, exc:
             # retry on new client
-            logging.error('listener error reading beanstalk, restart: %s',
+            LOGGER.error('listener error reading beanstalk, restart: %s',
                     exc)
             self.run()
         except KeyboardInterrupt:
-            logging.debug('listener on %s tube exiting on keyboard interrupt',
+            LOGGER.debug('listener on %s tube exiting on keyboard interrupt',
                     self.TUBE)
             sys.exit(0)
 

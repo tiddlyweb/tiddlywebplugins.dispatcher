@@ -14,6 +14,9 @@ DEFAULT_BEANSTALK_HOST = 'localhost'
 DEFAULT_BEANSTALK_PORT = 11300
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 def init(config):
     """
     Ensure the main server has a connection to the beanstalkd.
@@ -43,9 +46,9 @@ def make_beanstalkc(host, port, bail=False, backoff=1):
     """
     try:
         client = beanstalkc.Connection(host=host, port=port)
-        logging.debug('making new connection to beanstalkc')
+        LOGGER.debug('making new connection to beanstalkc')
     except beanstalkc.SocketError, exc:
-        logging.error('unable to make beanstalkc @%s connection: %s',
+        LOGGER.error('unable to make beanstalkc @%s connection: %s',
                 backoff, exc)
         if bail:
             raise
@@ -74,13 +77,13 @@ def _handler(store, tiddler):
     try:
         beanstalk.put(data.encode('UTF-8'))
     except beanstalkc.SocketError, exc:
-        logging.error('unable to write to beanstalkd for %s:%s: %s',
+        LOGGER.error('unable to write to beanstalkd for %s:%s: %s',
                 tiddler.bag, tiddler.title, exc)
         try:  # same again, but only once, this job is dropped if no second
             make_provider_beanstalkc(environ['tiddlyweb.config'])
             _handler(store, tiddler)
         except beanstalkc.SocketError, exc:
-            logging.error('unable to reconnect to beanstalk: %s', exc)
+            LOGGER.error('unable to reconnect to beanstalk: %s', exc)
 
 
 def _register_handler():
