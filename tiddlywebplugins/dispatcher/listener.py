@@ -114,6 +114,7 @@ class Listener(Process):
 def init(config):
     @make_command()
     def dispatcher(args):
+        """Start up the dispatcher."""
         dispatcher = Dispatcher(config=config)
         # Doesn't exit
         dispatcher.run()
